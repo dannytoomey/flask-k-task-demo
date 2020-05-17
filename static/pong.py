@@ -3,7 +3,7 @@
 # and they will be loaded when this file is compiled with transcrypt.
 # the CLI command to compile this file into transcrypt is
 #
-# transcrypt -b pong.py
+# transcrypt -b static/pong.py
 #
 # this will create a folder called __target__ with these files:
 # -com.fabric.js
@@ -14,13 +14,13 @@
 # ...
 # to be compatible with the project structure flask expects, the __target__ folder 
 # needs to be in /static
+
 from org.transcrypt.stubs.browser import __pragma__, __new__, document, window, Math, Date
 from com.fabricjs import fabric
 
 __pragma__ ('skip')
 __pragma__ ('noskip')
 __pragma__ ('noalias', 'clear')
-
 
 orthoWidth = 1000
 orthoHeight = 750
