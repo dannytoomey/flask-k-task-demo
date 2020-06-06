@@ -1,0 +1,12 @@
+This is a to-do list
+
+MAJOR
+-- Figure out how to store and read data securely
+    |-- idea: store as JSON files on a route accessed by keystroke that doesn't actually change the page, 
+    |   just gets and posts to an unseen page
+    |-- check how prolific stores data. maybe there somthing there?
+
+MINOR
+- Change the buttons to just F, J, and space 
+- Add practice that shows how to do the experiment
+- Add a "press space" function that will pause the experiment until the particant is ready to continue
