@@ -31,9 +31,9 @@ enter, esc, space = 13, 27, 32
 window.onkeydown = lambda event: event.keyCode != space # Prevent scrolldown on spacebar press
 
 class Attribute:    # Attribute in the gaming sense of the word, rather than of an object
-    def __init__ (self, game):
-        self.game = game                    # Attribute knows game it's part of
-        self.game.attributes.append (self)  # Game knows all its attributes
+    def __init__ (self, exp):
+        self.exp = exp                    # Attribute knows game it's part of
+        self.exp.attributes.append (self)  # Game knows all its attributes
         self.install ()                     # Put in place graphical representation of attribute
         self.reset ()                       # Reset attribute to start position
                 
@@ -49,20 +49,18 @@ class Attribute:    # Attribute in the gaming sense of the word, rather than of 
     def commit (self):
         pass
 
-class Sprite (Attribute):   # Here, a sprite is an attribute that can move
-    def __init__ (self, game, width, height):
+    def install(self):
+        pass
+
+class Sprite(Attribute):   # Here, a sprite is an attribute that can move
+    def __init__ (self, exp, width, height):
         self.width = width
         self.height = height
-        Attribute.__init__ (self, game)
+        Attribute.__init__ (self, exp)
         
     def install (self):     # The sprite holds an image that fabric can display
-        red = 0
-        green = 255
-        blue = 0
-        color = (f'rbg({red},{green},{blue})')
-
         self.image = __new__ (fabric.Rect ({
-            'width': self.game.scaleX (self.width), 'height': self.game.scaleY (self.height),
+            'width': self.exp.scaleX (self.width), 'height': self.exp.scaleY (self.height),
             'originX': 'center', 'originY': 'center', 'fill': 'white'
         }))
         
@@ -76,270 +74,41 @@ class Sprite (Attribute):   # Here, a sprite is an attribute that can move
         
         Attribute.reset (self)
     __pragma__ ('nokwargs')
-        
-    def predict (self):     # Predict position, do not yet commit, bouncing may alter it
-        self.x += self.vX * self.game.deltaT
-        self.y += self.vY * self.game.deltaT
-
+    
     def commit (self):      # Update fabric image for asynch draw
-        self.image.left = self.game.orthoX (self.x)
-        self.image.top = self.game.orthoY (self.y)
+        self.image.left = self.exp.orthoX (self.x)
+        self.image.top = self.exp.orthoY (self.y)
         
     def draw (self):
-        self.game.canvas.add (self.image)
+        self.exp.canvas.add (self.image)
 
-
-class Square(Sprite):
-    width = height = 50
-    
-    def __init__ (self, game, index):
-        self.index = index  # identifies the square
-        Sprite.__init__ (self, game, self.width, self.height)
-    
-    def set(self):
-        Sprite.reset(
-            self,
-            x = orthoWidth * Math.random(),
-            y = orthoHeight * Math.random() 
-        )
-
-
-    
-
-class Paddle (Sprite):
-    margin = 60 # Distance of paddles from walls
+class Stimuli(Sprite):
+    margin = 60 # Distance of stimuli from walls
     width = 50
     height = 50
-    speed = 400 # / s
     
-    def __init__ (self, game, index):
-        self.index = index  # Paddle knows its player index, 0 == left, 1 == right
-        Sprite.__init__ (self, game, self.width, self.height)
+    def __init__(self, exp, index):
+        self.index = index  # gives eachs square an index
+        Sprite.__init__ (self, exp, self.width, self.height)
         
         
-    def reset (self):       # Put paddle in rest position, dependent on player index
+    def reset(self):       # create a square and put it in a random position
         Sprite.reset(
             self,
             x = (-orthoWidth/2 + self.width) + (orthoWidth-self.width) * Math.random(),
             y = (-orthoHeight/2 + self.height) + (orthoHeight-self.height) * Math.random()
         )
-
-
-        '''
-        Sprite.reset (
-            self,
-            x = (orthoWidth // 2 - self.margin if self.index else -orthoWidth // 2 + self.margin) * Math.random(),
-            y = (-orthoHeight/2 + self.height) + (orthoHeight-self.height)*Math.random()
-        )
-        '''
+    
         
-        
-        
-    def predict (self): # Let paddle react on keys
-        self.vY = 0
-        
-        if self.index:                          # Right player
-            if self.game.keyCode == ord ('K'):  # Letter K pressed
-                self.vY = self.speed
-            elif self.game.keyCode == ord ('M'):
-                self.vY = -self.speed
-        else:                                   # Left player
-            if self.game.keyCode == ord ('A'):
-                self.vY = self.speed
-            elif self.game.keyCode == ord ('Z'):
-                self.vY = -self.speed
-                
-        Sprite.predict (self)                   # Do not yet commit, paddle may bounce with walls
-
-    def interact (self):    # Paddles and ball assumed infinitely thin
-        # Paddle touches wall
-        self.y = Math.max (self.height // 2 - fieldHeight // 2, Math.min (self.y, fieldHeight // 2 - self.height // 2))
-        
-        # Paddle hits ball
-        if (
-            (self.y - self.height // 2) < self.game.ball.y < (self.y + self.height // 2)
-            and (
-                (self.index == 0 and self.game.ball.x < self.x) # On or behind left paddle
-                or
-                (self.index == 1 and self.game.ball.x > self.x) # On or behind right paddle
-            )
-        ):
-            self.game.ball.x = self.x               # Ball may have gone too far already
-            self.game.ball.vX = -self.game.ball.vX  # Bounce on paddle
-            self.game.ball.speedUp (self)
-        
-class Ball (Sprite):
+class Fixation(Sprite):
     side = 8
-    speed = 300 # / s
     
-    def __init__ (self, game):
-        Sprite.__init__ (self, game, self.side, self.side)
-    
-    def reset (self):   # Launch according to service direction with random angle offset from horizontal
-        angle =  (
-            self.game.serviceIndex * Math.PI    # Service direction
-            +
-            (1 if Math.random () > 0.5 else -1) * Math.random () * Math.atan (fieldHeight / orthoWidth)
-        )
+    def __init__ (self, exp):
+        Sprite.__init__ (self, exp, self.side, self.side)
         
-        Sprite.reset (
-            self,
-            vX = self.speed * Math.cos (angle),
-            vY = self.speed * Math.sin (angle)
-        )
-        
-    def predict (self):
-        Sprite.predict (self)           # Integrate velocity to position
-        
-        if self.x < -orthoWidth // 2:   # If out on left side
-            self.game.scored (1)        #   Right player scored
-        elif self.x > orthoWidth // 2:
-            self.game.scored (0)
-            
-        if self.y > fieldHeight // 2:   # If it hits top wall
-            self.y = fieldHeight // 2   #   It may have gone too far already
-            self.vY = -self.vY          #   Bounce
-        elif self.y < -fieldHeight // 2:
-            self.y = -fieldHeight // 2
-            self.vY = -self.vY
-
-    def speedUp (self, bat):
-        factor = 1 + 0.15 * (1 - Math.abs (self.y - bat.y) / (bat.height // 2)) ** 2    # Speed will increase more if paddle hit near centre
-        
-        if Math.abs (self.vX) < 3 * self.speed:
-            self.vX *= factor
-            self.vY *= factor           
-
-class Scoreboard (Attribute):
-    nameShift = 75
-    hintShift = 25
-            
-    def install (self): # Graphical representation of scoreboard are four labels and a separator line
-        self.playerLabels = [__new__ (fabric.Text ('Player {}'.format (name), {
-                'fill': 'white', 'fontFamily': 'arial', 'fontSize': '{}' .format (self.game.canvas.width / 30),
-                'left': self.game.orthoX (position * orthoWidth), 'top': self.game.orthoY (fieldHeight // 2 + self.nameShift)
-        })) for name, position in (('AZ keys:', -7/16), ('KM keys:', 1/16))]
-        
-        self.hintLabel = __new__ (fabric.Text ('[spacebar] starts game, [enter] resets score', {
-                'fill': 'white', 'fontFamily': 'arial', 'fontSize': '{}'.format (self.game.canvas.width / 70),
-                'left': self.game.orthoX (-7/16 * orthoWidth), 'top': self.game.orthoY (fieldHeight // 2 + self.hintShift)
-        }))
-        
-        self.image = __new__ (fabric.Line ([
-                self.game.orthoX (-orthoWidth // 2), self.game.orthoY (fieldHeight // 2),
-                self.game.orthoX (orthoWidth // 2), self.game.orthoY (fieldHeight // 2)
-            ],
-            {'stroke': 'white'}
-        ))
-                
-    def increment (self, playerIndex):
-        self.scores [playerIndex] += 1
-        
-    def reset (self):
-        self.scores = [0, 0]
-        Attribute.reset (self)  # Only does a commit here
-        
-    def commit (self):          # Committing labels is adapting their texts
-        self.scoreLabels = [__new__ (fabric.Text ('{}'.format (score), {
-                'fill': 'white', 'fontFamily': 'arial', 'fontSize': '{}'.format (self.game.canvas.width / 30),
-                'left': self.game.orthoX (position * orthoWidth), 'top': self.game.orthoY (fieldHeight // 2 + self.nameShift)
-        })) for score, position in zip (self.scores, (-2/16, 6/16))]
-
-    def draw (self):
-        for playerLabel, scoreLabel in zip (self.playerLabels, self.scoreLabels):
-            self.game.canvas.add (playerLabel)
-            self.game.canvas.add (scoreLabel)
-            self.game.canvas.add (self.hintLabel)
-        self.game.canvas.add (self.image)
-
 class Experiment:
-
-    def __init__(self):
-        self.keyCode = None
-        self.pause = True
-        
-        self.canvasFrame = document.getElementById ('canvas_frame')
-        self.canvas = __new__ (fabric.Canvas ('canvas', {'backgroundColor': 'black', 'originX': 'center', 'originY': 'center'}))
-        self.canvas.onWindowDraw = self.draw        # Install draw callback, will be called asynch
-        self.canvas.lineWidth = 2
-        self.canvas.clear ()    
-
-        set_size = 6
-
-        self.attributes = []
-        squares = [Square(self,index) for index in range(set_size)]
-        self.squares = [Square.set(square) for square in squares]
-        
-        window.setInterval (self.update, 10)    # Install update callback, time in ms
-        window.setInterval (self.draw, 20)      # Install draw callback, time in ms
-        window.addEventListener ('keydown', self.keydown)
-        window.addEventListener ('keyup', self.keyup)
-        
-        self.buttons = []
-        
-        for key in ('F','J','space'):
-            button = document.getElementById (key)
-            button.addEventListener ('mousedown', (lambda aKey: lambda: self.mouseOrTouch (aKey, True)) (key))  # Returns inner lambda
-            button.addEventListener ('touchstart', (lambda aKey: lambda: self.mouseOrTouch (aKey, True)) (key))
-            button.addEventListener ('mouseup', (lambda aKey: lambda: self.mouseOrTouch (aKey, False)) (key))
-            button.addEventListener ('touchend', (lambda aKey: lambda: self.mouseOrTouch (aKey, False)) (key))
-            button.style.cursor = 'pointer'
-            button.style.userSelect = 'none'
-            self.buttons.append (button)
-
-        self.time = + __new__ (Date)
-        
-        
-    def mouseOrTouch (self, key, down):
-        if down:
-            if key == 'space':
-                self.keyCode = space
-            elif key == 'enter':
-                self.keyCode = enter
-            else:
-                self.keyCode = ord (key)
-        else:
-            self.keyCode = None
-
-    def update (self):                          # Note that update and draw are not synchronized
-        oldTime = self.time
-        self.time = + __new__ (Date)
-        self.deltaT = (self.time - oldTime) / 1000.
-        
-        if self.pause:                          # If in paused state
-            if self.keyCode == space:           #   If spacebar hit
-                self.pause = False              #         Start playing
-            
-        else:                                   # Else, so if in active state
-            for attribute in self.attributes:   #   Compute predicted values
-                attribute.predict ()
-            
-            for attribute in self.attributes:   #   Correct values for bouncing and scoring
-                attribute.interact ()
-            
-            for attribute in self.attributes:   #   Commit them to pyglet for display
-                attribute.commit ()
-    
-    def commit (self):
-        for attribute in self.attributes:
-            attribute.commit ()
-        
-    def draw (self):
-        self.canvas.clear ()
-        for attribute in self.attributes:
-            attribute.draw ()
-    
-    def keydown (self, event):
-        self.keyCode = event.keyCode
-        
-    def keyup (self, event):
-        self.keyCode = None 
-    
-
-class Game:
     def __init__ (self):
-        self.serviceIndex = 1 if Math.random () > 0.5 else 0    # Index of player that has initial service
-        self.pause = True                           # Start game in paused state
+        self.pause = True                           # Start experiment in paused state
         self.keyCode = None
         
         self.textFrame = document.getElementById ('text_frame')
@@ -353,10 +122,9 @@ class Game:
 
         self.set_size = 6
         self.attributes = []                        # All attributes will insert themselves here
-        self.paddles = [Paddle (self, index) for index in range (self.set_size)]    # Pass game as parameter self
-        self.ball = Ball (self)
-        #self.scoreboard = Scoreboard (self)     
-
+        self.stimuli = [Stimuli(self, index) for index in range (self.set_size)]    # Pass game as parameter self
+        self.fixation_point = Fixation(self)
+        
         window.setInterval (self.update, 1)    # Install update callback, time in ms
         window.setInterval (self.draw, 20)      # Install draw callback, time in ms
         window.addEventListener ('keydown', self.keydown)
@@ -374,7 +142,6 @@ class Game:
             button.style.userSelect = 'none'
             self.buttons.append (button)
         
-
             
         self.time = + __new__ (Date)
         
@@ -410,13 +177,10 @@ class Game:
 
         self.update_squares()
         
-
-        
         if self.pause:                          # If in paused state
             if self.keyCode == space:           #   If spacebar hit
                 self.pause = False              #         Start playing
-            elif self.keyCode == enter:         #   Else if enter hit
-                self.scoreboard.reset ()        #         Reset score
+                
         else:                                   # Else, so if in active state
             for attribute in self.attributes:   #   Compute predicted values
                 attribute.predict ()
@@ -426,81 +190,68 @@ class Game:
             
             for attribute in self.attributes:   #   Commit them to pyglet for display
                 attribute.commit ()
+            
+            
 
     def update_squares(self):
-        self.delta_exp_timer = (self.time - self.start_exp_timer)
+        if self.pause:
+            for square in self.stimuli:
+                if square.image.fill != self.canvas.backgroundColor:
+                    square.image.fill = self.canvas.backgroundColor
         
-        if self.delta_exp_timer <= 1000:
-            if self.trial_set != True:
-                for paddle in self.paddles:
-
-                    paddle.reset()
-
-                    red = 255 * Math.random()
-                    green = 255 * Math.random()
-                    blue = 255 * Math.random()
-                    color = f'rgb({red},{green},{blue})'
-
-                    paddle.image.fill = color
-
-                    if paddle == self.paddles[0]:
-                        self.target_color = paddle.image.fill
-
-
-                self.trial_set = True
-
-        if 1000 < self.delta_exp_timer <= 1250:
-            for paddle in self.paddles:
-                if paddle.image.fill != self.canvas.backgroundColor:
-                    paddle.image.fill = self.canvas.backgroundColor
-
-    
-        if 1250 < self.delta_exp_timer <= 2000:
-            if self.target_presented != True:
-                for paddle in self.paddles:
-                    if paddle.index > 0:
-                        paddle.image.fill = self.canvas.backgroundColor
-                    else:
-                        paddle.image.fill = self.target_color 
-
-                self.target_presented = True
-        
-        
-        if 2000 < self.delta_exp_timer <= 2500:
-            for paddle in self.paddles:
-                if paddle.image.fill != self.canvas.backgroundColor:
-                    paddle.image.fill = self.canvas.backgroundColor
-
-             
-        if 2500 < self.delta_exp_timer:
-            self.start_exp_timer = self.time
-            self.trial_set = False
-            self.target_presented = False
-            self.isi_presented = False
-            self.all_presented = False
-        
-                
-               
-        
-        
-        
+        else:
             
-        
-        
+            self.delta_exp_timer = (self.time - self.start_exp_timer)
+            
+            if self.delta_exp_timer <= 1000:
+                if self.trial_set != True:
+                    for square in self.stimuli:
 
-    def scored (self, playerIndex):             # Player has scored
-        self.scoreboard.increment (playerIndex) # Increment player's points
-        self.serviceIndex = 1 - playerIndex     # Grant service to the unlucky player
-        
-        '''
-        for paddle in self.paddles:             # Put paddles in rest position
-            paddle.reset()
-        
-        '''
+                        square.reset()
 
-        self.ball.reset ()                      # Put ball in rest position
-        self.pause = True                       # Wait for next round
+                        red = 255 * Math.random()
+                        green = 255 * Math.random()
+                        blue = 255 * Math.random()
+                        color = f'rgb({red},{green},{blue})'
+
+                        square.image.fill = color
+
+                        if square == self.stimuli[0]:
+                            self.target_color = square.image.fill
+
+
+                    self.trial_set = True
+
+            if 1000 < self.delta_exp_timer <= 1250:
+                for square in self.stimuli:
+                    if square.image.fill != self.canvas.backgroundColor:
+                        square.image.fill = self.canvas.backgroundColor
+
         
+            if 1250 < self.delta_exp_timer <= 2000:
+                if self.target_presented != True:
+                    for square in self.stimuli:
+                        if square.index > 0:
+                            square.image.fill = self.canvas.backgroundColor
+                        else:
+                            square.image.fill = self.target_color 
+
+                    self.target_presented = True
+            
+            
+            if 2000 < self.delta_exp_timer <= 2500:
+                for square in self.stimuli:
+                    if square.image.fill != self.canvas.backgroundColor:
+                        square.image.fill = self.canvas.backgroundColor
+
+                
+            if 2500 < self.delta_exp_timer:
+                self.start_exp_timer = self.time
+                self.trial_set = False
+                self.target_presented = False
+                self.isi_presented = False
+                self.all_presented = False
+            
     def commit (self):
         for attribute in self.attributes:
             attribute.commit ()
@@ -529,7 +280,7 @@ class Game:
         self.buttonsTop = self.canvasTop + self.canvasHeight + 50
         self.buttonsWidth = 500
             
-        self.textFrame.style.top = self.textTop;
+        self.textFrame.style.top = self.textTop
         self.textFrame.style.left = self.canvasLeft + 0.05 * self.canvasWidth
         self.textFrame.style.width = 0.9 * self.canvasWidth
             
@@ -563,4 +314,4 @@ class Game:
     def keyup (self, event):
         self.keyCode = None 
         
-game = Game ()  # Create and run game
+exp = Experiment()  # Create and run game
