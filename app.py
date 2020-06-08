@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import render_template, request, jsonify, Response
 from flask_cache_buster import CacheBuster
-from flask_sqlalchemy import SQLAlchemy 
+#from flask_sqlalchemy import SQLAlchemy 
 
 config = {
      'extensions': ['.js', '.css', '.csv'],
