@@ -357,14 +357,14 @@ class Game:
         self.ball = Ball (self)
         #self.scoreboard = Scoreboard (self)     
 
-        window.setInterval (self.update, 10)    # Install update callback, time in ms
+        window.setInterval (self.update, 1)    # Install update callback, time in ms
         window.setInterval (self.draw, 20)      # Install draw callback, time in ms
         window.addEventListener ('keydown', self.keydown)
         window.addEventListener ('keyup', self.keyup)
         
         self.buttons = []
         
-        for key in ('A', 'Z', 'K', 'M', 'space', 'enter'):
+        for key in ('F', 'J','space'):
             button = document.getElementById (key)
             button.addEventListener ('mousedown', (lambda aKey: lambda: self.mouseOrTouch (aKey, True)) (key))  # Returns inner lambda
             button.addEventListener ('touchstart', (lambda aKey: lambda: self.mouseOrTouch (aKey, True)) (key))
@@ -373,6 +373,8 @@ class Game:
             button.style.cursor = 'pointer'
             button.style.userSelect = 'none'
             self.buttons.append (button)
+        
+
             
         self.time = + __new__ (Date)
         

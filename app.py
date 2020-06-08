@@ -1,6 +1,8 @@
-from flask import Flask 
+from flask import Flask
 from flask import render_template, request, jsonify, Response
 from flask_cache_buster import CacheBuster
+from flask_sqlalchemy import SQLAlchemy 
+
 config = {
      'extensions': ['.js', '.css', '.csv'],
      'hash_size': 10
@@ -27,6 +29,30 @@ def home():
     #to render a template outside of the templates folder, specifcy a different folder in 
     #app = Flask(... , template_folder=<your new folder>, ...)
     return render_template("home.html")
+
+
+'''
+@app.route("/data", methods=['GET','POST'])
+def store_data(request):
+    try:
+
+        
+
+        # create a instances for filling up employee list
+        for i in range(0,5):
+            employee = Employee(names.get_first_name(),names.get_last_name())
+            employeeList.append(employee)
+    
+    # convert to json data
+        jsonStr = json.dumps([e.toJSON() for e in employeeList])
+
+    except:
+        print "error ", sys.exc_info()[0]
+
+    return jsonStr
+
+'''
+
 
 if __name__ == "__main__":
     from os import environ
